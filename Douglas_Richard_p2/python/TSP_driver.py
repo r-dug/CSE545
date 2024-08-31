@@ -54,7 +54,7 @@ def tour(tsp_file):
                 cost_vals
                 )
     return parser
-# /mnt/c/Users/15022/Documents/uofl/fall_24/artificial_intelligence/Douglas_Richard_p1/p1/1TSPbruteForce/Random7.tsp
+
 def logging(log_path, headers, runtimes):
     header = None
     try:

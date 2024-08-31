@@ -200,11 +200,11 @@ class Parser:
         start = datetime.now()
         node_names = list(self.nodes.keys())
         current_node = self.nodes[node_names[0]]
-        cost_list = list(current_node["costs"].keys())
         visited = [node_names[0]]
         best_cost = 0
         i = 0
         while len(visited) < len(self.nodes):
+            cost_list = list(current_node["costs"].keys())
             potential_next = cost_list[i]
             if potential_next not in visited:
                 prev_node = current_node
@@ -212,7 +212,6 @@ class Parser:
                 best_cost += prev_node["costs"][potential_next]
                 visited.append(potential_next)
                 i = 0
-                cost_list = list(current_node["costs"].keys())
             i += 1
         best_cost += current_node["costs"][node_names[0]]
         visited.append(node_names[0])
@@ -241,7 +240,7 @@ class Parser:
                     current_node = self.nodes[next_node_name]
                     visited.append(next_node_name)
                     if best_cost != None and current_cost > best_cost:
-                        break
+                        continue
             current_cost += current_node["costs"][node_names[0]]
             visited.append(node_names[0])
             

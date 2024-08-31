@@ -1,0 +1,40 @@
+2.3 For each of the following assertions, say whether it is true or false and support your
+answer with examples or counterexamples where appropriate.
+a. An agent that senses only partial information about the state cannot be perfectly rational.
+
+
+
+b. There exist task environments in which no pure reflex agent can behave rationally.
+
+
+
+c. There exists a task environment in which every agent is rational.
+
+
+
+d. The input to an agent program is the same as the input to the agent function.
+
+
+2.5 Define in your own words the following terms: agent, agent function, agent program,
+rationality, autonomy, reflex agent, model-based agent, goal-based agent, utility-based agent,
+learning agent.
+
+
+
+2.6 This exercise explores the differences between agent functions and agent programs.
+a. Can there be more than one agent program that implements a given agent function?
+Give an example, or show why one is not possible.
+
+
+
+b. Are there agent functions that cannot be implemented by any agent program?
+
+
+
+c. Given a fixed machine architecture, does each agent program implement exactly one
+agent function?
+
+
+
+d. Given an architecture with n bits of storage, how many different possible agent programs are there?
+
