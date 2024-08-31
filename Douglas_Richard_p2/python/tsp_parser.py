@@ -43,6 +43,49 @@ def garbage_man(silent=False):
     unreachable_objects = gc.collect()
     if silent == False:
         print(f"Number of unreachable objects collected: {unreachable_objects}")
+
+def create_nodes(file_obj, num_nodes, verbose):
+        nodes = {}
+        lines = file_obj.readlines()
+        i = 0
+        for line in lines:
+            if i == 0 and line.strip().split()[0] != "1": 
+                if verbose == True:
+                    print("DISCARDED LINE",line)
+                continue
+            if num_nodes !=None and i >= num_nodes:
+                break
+            line = line.strip().split()
+            if len(line) > 1:
+                nodes[line[0]] = {"x": float(line[1]), "y": float(line[2]), "costs": {}}
+            i += 1
+        return nodes
+
+# this populates the connection table with pseudo random 
+def random_connections(nodes, loops, traps):
+    connections = {}
+    node_names = list(nodes.keys())
+
+    for i in node_names:
+        connections[i]={}
+        for j in node_names:
+            if i == str(len(node_names)): # last node is the only trap node allowed.
+                connections[i][j] = False
+                continue
+            if random.randint(0,100)%5 == 0: # ~(1/5)x(1/n^2) chance of true connection assignment
+                # prevent loopback nodes by default
+                if i == j and loops == False:
+                    connections[i][j] = False
+                    continue
+                connections[i][j] = True
+            else:
+                connections[i][j] = False
+        
+        if (not True in connections[i].values()) and traps == False and (int(i) != len(node_names)):
+            # print(f'connection added. trap prevented at connection {i}:{str(int(i)+1)}.')
+            connections[i][str(int(i)+1)] = True
+    return connections
+
 def fcg_costs(nodes):
     node_names = list(nodes.keys())
     for i in node_names:
@@ -56,14 +99,14 @@ def fcg_costs(nodes):
             current["costs"][j] = math.sqrt((x2-x1)**2+(y2-y1)**2)
     return nodes
 
-def dg_costs(nodes):
+def dg_costs(nodes, connections):
     node_names = list(nodes.keys())
     for i in node_names:
         current = nodes[i]
         x1 = current["x"]
         y1 = current['y']
         for j in node_names:
-            if connections[i][j] != False:
+            if connections[i][j] == True:
                 to_node = nodes[j]
                 x2 = to_node["x"]
                 y2 = to_node["y"]
@@ -74,14 +117,20 @@ class Parser:
     def __init__(self, 
                  path, 
                  num_nodes=None, 
-                 connection="directed", 
+                 connection_type="directed", 
+                 connection_src = "static",
+                 traps = False,
+                 loops = False,
                  verbose = False):
+        
         # these class vars come from args and are relevant to functions
         self.file_obj = open(path)
         self.path = path
         self.num_nodes = num_nodes
-        self.connection_type = connection
+        self.connection_type = connection_type
         self.verbose = verbose
+        self.traps = traps
+        self.loops = loops
 
         # as of 8/26/24, these nodes don't do anything. 
         self.name = self.file_obj.readline()
@@ -92,7 +141,15 @@ class Parser:
         self.header = self.file_obj.readline()
 
         # these are populated by functions
-        self.nodes = {}
+        self.nodes = create_nodes(self.file_obj, self.num_nodes, self.verbose)
+        if connection_src == "static":
+            self.connections = connections
+        elif connection_src == "random":
+            self.connections = random_connections(self.nodes, self.traps, self.loops)
+        if self.connection_type == "full":
+            self.nodes = fcg_costs(self.nodes, self.connections)
+        elif self.connection_type == "directed":
+            self.nodes = dg_costs(self.nodes, self.connections)
         self.tour_costs = []
         self.runtimes = {}
  
@@ -101,35 +158,23 @@ class Parser:
     
     def print_tour_costs(self):
         for i in range(len(self.tour_costs)):
-            # uses quick sort implementation? check docs
             print(self.tour_costs[i] )
-    
-    def create_nodes(self):
-        lines = self.file_obj.readlines()
-        i = 0
-        for line in lines:
-            if i == 0 and line.strip().split()[0] != "1": 
-                if self.verbose == True:
-                    print("DISCARDED LINE",line)
-                continue
-            if self.num_nodes !=None and i >= self.num_nodes:
-                break
-            line = line.strip().split()
-            if len(line) > 1:
-                self.nodes[line[0]] = {"x": float(line[1]), "y": float(line[2]), "costs": {}}
-            i += 1
 
     def clear(self):
-                # these are populated by functions
+        # these are populated by functions. I haven't found an actual use for clearing node values
         self.nodes = {}
         self.tour_costs = []
         self.runtimes = {}
     
-    def add_costs(self, ct_or=None):
-        if self.connection_type == "full" or ct_or=="full":
-            self.nodes = fcg_costs(self.nodes)
-        elif self.connection_type == "directed" or ct_or=="directed":
-            self.nodes = dg_costs(self.nodes)
+    def override_costs(self, ct_or=None):
+        if ct_or == None:
+            print(
+                """usage: Parser.add_costs(ct_or=['full', 'directed']) 
+                # changes the cost attribute of the nodes to a desired graph type in lieu of instantiated class var.""")
+        elif ct_or=="full":
+            self.nodes['costs'] = fcg_costs(self.nodes)
+        elif ct_or=="directed":
+            self.nodes['costs'] = dg_costs(self.nodes)
         
     def sort_costs(self):
         node_names = list(self.nodes.keys())
