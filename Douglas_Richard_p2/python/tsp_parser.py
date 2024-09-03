@@ -57,7 +57,7 @@ def create_nodes(file_obj, num_nodes, verbose):
                 break
             line = line.strip().split()
             if len(line) > 1:
-                nodes[line[0]] = {"x": float(line[1]), "y": float(line[2]), "costs": {}}
+                nodes[line[0]] = {"coordinates": (float(line[1]), float(line[2])), "costs": {}}
             i += 1
         return nodes
 
@@ -90,12 +90,12 @@ def fcg_costs(nodes):
     node_names = list(nodes.keys())
     for i in node_names:
         current = nodes[i]
-        x1 = current["x"]
-        y1 = current['y']
+        x1 = current["coordinates"][0]
+        y1 = current["coordinates"][1]
         for j in node_names:
             to_node = nodes[j]
-            x2 = to_node["x"]
-            y2 = to_node["y"]
+            x2 = to_node["coordinates"][0]
+            y2 = to_node["coordinates"][1]
             current["costs"][j] = math.sqrt((x2-x1)**2+(y2-y1)**2)
     return nodes
 
@@ -103,13 +103,13 @@ def dg_costs(nodes, connections):
     node_names = list(nodes.keys())
     for i in node_names:
         current = nodes[i]
-        x1 = current["x"]
-        y1 = current['y']
+        x1 = current["coordinates"][0]
+        y1 = current["coordinates"][1]
         for j in node_names:
             if connections[i][j] == True:
                 to_node = nodes[j]
-                x2 = to_node["x"]
-                y2 = to_node["y"]
+                x2 = to_node["coordinates"][0]
+                y2 = to_node["coordinates"][1]
                 current["costs"][j] = math.sqrt((x2-x1)**2+(y2-y1)**2)
     return nodes
 

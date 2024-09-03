@@ -164,5 +164,5 @@ class Traversal:
         
         best_path = []
         queue = []
-        head_cost = 
+        head_cost = None
         return
