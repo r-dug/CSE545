@@ -13,7 +13,8 @@ import csv
 import gc
 # add libraries from the cwd into the PATH to allow local imports
 sys.path.append(os.getcwd())
-import tsp_parser
+import tsp_parser2 
+from traversal import FullTraversal
 from plotting import Plotting
 
 gc.set_threshold(0) # collect garbage manually...
@@ -27,23 +28,19 @@ def find_salespeople():
                 tsps.append(f"{os.path.join(root,file)}")
     return tsps
 
-def create_nodes(num_nodes, tsp_file):
-    parser =  tsp_parser.Parser(tsp_file, num_nodes)
-    parser.create_nodes()
-    parser.add_costs()
-    return parser
 
 def tour(tsp_file):
     tsp_file_name = tsp_file.split('/')[-1]
     print(f"iterating through: {tsp_file_name}")
     for num in range(2,13):
-        parser = create_nodes(num, tsp_file)
-        parser.brute_force()
-        parser.brute_force_restart()
-        parser.random()
-        parser.sort_costs()
-        parser.greedy()
-        parser.random_restart(20000)
+        parser = tsp_parser2.Parser(num, tsp_file, connection_type="full")
+        print(parser.nodes)
+        FullTraversal.brute_force(parser)
+        FullTraversal.brute_force_restart(parser)
+        FullTraversal.random(parser)
+        parser.sort_costs(parser)
+        FullTraversal.greedy(parser)
+        FullTraversal.random_restart(20000)
 
         for tour_cost in parser.tour_costs:
             cost_keys = list(tour_cost.keys())
@@ -83,19 +80,17 @@ if __name__ == "__main__":
     parser = None
     try:
         tsps = find_salespeople()
+        print(tsps)
     except Exception as e:
         print(e)
         exit()
     
-    try:
-        for tsp in tsps:
-            try:
-                parser = tour(tsp)
-            except Exception as e:
-                print(e)
-    except Exception as e:
-        print(e)
-        exit()
+
+    for tsp in tsps:
+        
+        parser = tour(tsp)
+        
+   
         
     garbage_man()
     tour_costs = parser.tour_costs

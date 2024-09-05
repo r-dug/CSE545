@@ -26,17 +26,17 @@ import gc
 gc.set_threshold(0)
 
 connections = {
-    '1':{'1':False,'2': True, '3':True, '4':True, '5':False, '6':False, '7':False, '8':False, '9':False, '10':False, '11':False},
-    '2':{'1':False,'2': False, '3':True, '4':False, '5':False, '6':False, '7':False, '8':False, '9':False, '10':False, '11':False},
-    '3':{'1':False,'2': False, '3':False, '4':True, '5':True, '6':False, '7':False, '8':False, '9':False, '10':False, '11':False},
-    '4':{'1':False,'2': False, '3':False, '4':False, '5':True, '6':True, '7':True, '8':False, '9':False, '10':False, '11':False},
-    '5':{'1':False,'2': False, '3':False, '4':False, '5':False, '6':False, '7':True, '8':True, '9':False, '10':False, '11':False},
-    '6':{'1':False,'2': False, '3':False, '4':False, '5':False, '6':False, '7':False, '8':True, '9':False, '10':False, '11':False},
-    '7':{'1':False,'2': False, '3':False, '4':False, '5':False, '6':False, '7':False, '8':False, '9':True, '10':True, '11':False},
-    '8':{'1':False,'2': False, '3':False, '4':False, '5':False, '6':False, '7':False, '8':False, '9':True, '10':True, '11':True},
-    '9':{'1':False,'2': False, '3':False, '4':False, '5':False, '6':False, '7':False, '8':False, '9':False, '10':False, '11':True},
-    '10':{'1':False,'2': False, '3':False, '4':False, '5':False, '6':False, '7':False, '8':False, '9':False, '10':False, '11':True},
-    '11':{'1':False,'2': False, '3':False, '4':False, '5':False, '6':False, '7':False, '8':False, '9':False, '10':False, '11':False}
+    0:{0:False,1: True, 2:True, 3:True, 4:False, 5:False, 6:False, 7:False, 8:False, 9:False, 10:False},
+    1:{0:False,1: False, 2:True, 3:False, 4:False, 5:False, 6:False, 7:False, 8:False, 9:False, 10:False},
+    2:{0:False,1: False, 2:False, 3:True, 4:True, 5:False, 6:False, 7:False, 8:False, 9:False, 10:False},
+    3:{0:False,1: False, 2:False, 3:False, 4:True, 5:True, 6:True, 7:False, 8:False, 9:False, 10:False},
+    4:{0:False,1: False, 2:False, 3:False, 4:False, 5:False, 6:True, 7:True, 8:False, 9:False, 10:False},
+    5:{0:False,1: False, 2:False, 3:False, 4:False, 5:False, 6:False, 7:True, 8:False, 9:False, 10:False},
+    6:{0:False,1: False, 2:False, 3:False, 4:False, 5:False, 6:False, 7:False, 8:True, 9:True, 10:False},
+    7:{0:False,1: False, 2:False, 3:False, 4:False, 5:False, 6:False, 7:False, 8:True, 9:True, 10:True},
+    8:{0:False,1: False, 2:False, 3:False, 4:False, 5:False, 6:False, 7:False, 8:False, 9:False, 10:True},
+    9:{0:False,1: False, 2:False, 3:False, 4:False, 5:False, 6:False, 7:False, 8:False, 9:False, 10:True},
+    10:{0:False,1: False, 2:False, 3:False, 4:False, 5:False, 6:False, 7:False, 8:False, 9:False, 10:False}
 }
 
 def garbage_man(silent=False):
@@ -57,7 +57,7 @@ def create_nodes(file_obj, num_nodes, verbose):
                 break
             line = line.strip().split()
             if len(line) > 1:
-                nodes[line[0]] = {"x": float(line[1]), "y": float(line[2]), "costs": {}}
+                nodes[int(line[0])-1] = {"xy":(float(line[1]), float(line[2])), "costs": {}}
             i += 1
         return nodes
 
@@ -69,7 +69,7 @@ def random_connections(nodes, loops, traps):
     for i in node_names:
         connections[i]={}
         for j in node_names:
-            if i == str(len(node_names)): # last node is the only trap node allowed.
+            if i == len(node_names): # last node is the only trap node allowed.
                 connections[i][j] = False
                 continue
             if random.randint(0,100)%5 == 0: # ~(1/5)x(1/n^2) chance of true connection assignment
@@ -90,12 +90,10 @@ def fcg_costs(nodes):
     node_names = list(nodes.keys())
     for i in node_names:
         current = nodes[i]
-        x1 = current["x"]
-        y1 = current['y']
+        x1, y1 = current["xy"][0], current["xy"][1]
         for j in node_names:
             to_node = nodes[j]
-            x2 = to_node["x"]
-            y2 = to_node["y"]
+            x2, y2 = to_node["xy"][0], to_node["xy"][1]
             current["costs"][j] = math.sqrt((x2-x1)**2+(y2-y1)**2)
     return nodes
 
@@ -103,13 +101,11 @@ def dg_costs(nodes, connections):
     node_names = list(nodes.keys())
     for i in node_names:
         current = nodes[i]
-        x1 = current["x"]
-        y1 = current['y']
+        x1, y1 = current["xy"][0], current["xy"][1]
         for j in node_names:
             if connections[i][j] == True:
                 to_node = nodes[j]
-                x2 = to_node["x"]
-                y2 = to_node["y"]
+                x2, y2 = to_node["xy"][0], to_node["xy"][1]
                 current["costs"][j] = math.sqrt((x2-x1)**2+(y2-y1)**2)
     return nodes
 

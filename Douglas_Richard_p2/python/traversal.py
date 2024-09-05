@@ -11,8 +11,10 @@ Ok. I thought about it and I think it will probably be the most appropriate to s
 from datetime import datetime
 from itertools import permutations
 import random
+from collections import deque
 # import tsp_parser
-class FullConnect:
+class FullTraversal:
+    @staticmethod
     def brute_force(parser):
         start = datetime.now()
         node_names = list(parser.nodes.keys())
@@ -40,6 +42,7 @@ class FullConnect:
                 "runtime":runtime,
                 "tsp_file": parser.path.split('/')[-1]})
 
+    @staticmethod
     def brute_force_restart(parser):
         start = datetime.now()
         node_names = list(parser.nodes.keys())
@@ -71,6 +74,7 @@ class FullConnect:
              "runtime":runtime,
              "tsp_file": parser.path.split('/')[-1]})
 
+    @staticmethod
     def random(parser):
         start = datetime.now()
         node_names = list(parser.nodes.keys())
@@ -95,6 +99,7 @@ class FullConnect:
              "runtime":runtime,
              "tsp_file": parser.path.split('/')[-1]})
 
+    @staticmethod
     def greedy(parser):
         start = datetime.now()
         node_names = list(parser.nodes.keys())
@@ -121,7 +126,8 @@ class FullConnect:
              "cost": best_cost, 
              "runtime":runtime,
              "tsp_file": parser.path.split('/')[-1]})
-
+    
+    @staticmethod
     def random_restart(parser, runs):
         start = datetime.now()
         node_names = list(parser.nodes.keys())
@@ -160,29 +166,51 @@ class FullConnect:
 # separate class for search functions in a directed graph...
 # we aren't going to assume we know a starting node or a destination. let's get closer to this being real and useful - gosh....
 class Directed:
-    def bfs_cost(nodes, start_node, dest_nodes): # include branching rate? could that be useful in this context? the search space is finite, so maybe not... 
+    @staticmethod
+    def bfs_cost(parser, start_node, dest_node): # include branching rate? could that be useful in this context? the search space is finite, so maybe not... 
+
+        visited = [False] * len(parser.nodes.keys())
         
+        q = deque()
+
+        visited[start_node] = True
+        q.append(start_node)
+
+        while q:
+            curr = q.popleft()
+
+            for node in parser.nodes[curr]["connections"].items():
+                if not node[0] in visited:
+                    continue
+
+
 
         return
     
+    @staticmethod
     # we are simply going to iterate through paths numerically in this implementation and track the best path so far
-    def dfs_cost(nodes, start_node, dest_nodes):
-
-
-        return
-
-    # fast search using incredibly simple heuristic of least cost to next node
-    def greedy_cost(nodes, start_node, dest_nodes):
+    def dfs_cost(parser, start_node, dest_nodes):
 
 
         return
     
-    def a_star(nodes, start_node, dest_nodes):
+    @staticmethod
+    # fast search using incredibly simple heuristic of least cost to next node
+    def greedy_cost(parser, start_node, dest_nodes):
+
+
+        return
+    
+    @staticmethod
+    # A better heuristic: which directly connected node is closest to the goal node
+    def a_star(parser, start_node, dest_nodes):
         
 
         return
     
-    def ida_star(nodes, start_node, dest_nodes):
+    @staticmethod
+    # maybe an even better heuristic: which directly connected node has the lowest combined value of (dist from current + dist to goal)
+    def ida_star(parser, start_node, dest_nodes):
         
 
         return
