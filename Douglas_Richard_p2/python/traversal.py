@@ -12,7 +12,7 @@ from datetime import datetime
 from itertools import permutations
 import random
 # import tsp_parser
-class Traversal:
+class FullConnect:
     def brute_force(parser):
         start = datetime.now()
         node_names = list(parser.nodes.keys())
@@ -156,13 +156,34 @@ class Traversal:
              "runtime":runtime,
              "tsp_file": parser.path.split('/')[-1]})
 
-    def DFS(nodes):
+
+# separate class for search functions in a directed graph...
+# we aren't going to assume we know a starting node or a destination. let's get closer to this being real and useful - gosh....
+class Directed:
+    def bfs_cost(nodes, start_node, dest_nodes): # include branching rate? could that be useful in this context? the search space is finite, so maybe not... 
+        
+
         return
     
-    def BFS(nodes):
-        best_cost = None
-        
-        best_path = []
-        queue = []
-        head_cost = 
+    # we are simply going to iterate through paths numerically in this implementation and track the best path so far
+    def dfs_cost(nodes, start_node, dest_nodes):
+
+
         return
+
+    # fast search using incredibly simple heuristic of least cost to next node
+    def greedy_cost(nodes, start_node, dest_nodes):
+
+
+        return
+    
+    def a_star(nodes, start_node, dest_nodes):
+        
+
+        return
+    
+    def ida_star(nodes, start_node, dest_nodes):
+        
+
+        return
+    

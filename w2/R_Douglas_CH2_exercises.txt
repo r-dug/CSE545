@@ -2,39 +2,61 @@
 answer with examples or counterexamples where appropriate.
 a. An agent that senses only partial information about the state cannot be perfectly rational.
 
+That really depends on what you mean by partial information, and about which state you are asking. 
+
+If an agent senses all of the environment state information that is relevant to maximizing its performance measures, it can be considered perfectly rational for the context it was designed.
+
+For the carpet cleaning example provided in the text, the agent need only sense the state of the floor's relative cleanliness.
+
+It does not need to percieve the quality of the paint on the ceiling or of the dinner cooking on the counter to achieve rationality for the function it was designed.
 
 
 b. There exist task environments in which no pure reflex agent can behave rationally.
 
+True. I consider the task environment in which LLMs were designed - text. Agents closer to reflex agents were early iterations of chatbots, but they could barely be argued to be rational agents and it's even debatable whether or not they can be said to be purely reflex agents.
 
 
 c. There exists a task environment in which every agent is rational.
 
-
+I suppose if the task environment is to exist in the known universe, it's mostly arguable that any possible agent - for all practical consideration - would be perfectly rational... Although that is a trivial fact.
 
 d. The input to an agent program is the same as the input to the agent function.
 
+An agent function is the mathematical, abstract definition of the action the agent is to take in response to its inputs.
 
-2.5 Define in your own words the following terms: agent, agent function, agent program,
-rationality, autonomy, reflex agent, model-based agent, goal-based agent, utility-based agent,
-learning agent.
+An agent program is the implementation of that abstract definition. 
+
+Their inputs are, in fact, the same. the only distinction between the inputs is that the inputs of the agent program are concrete percepts, whereas the inputs to the agent function are the abstract definitions of the percepts.
 
 
+2.5 Define in your own words the following terms: 
+agent - an agent is simply a system designed to ingest percepts from an environment and respond to them through some action.
+agent function - the agent function is the abstract definiton of an agents behavior.
+agent program - an agent program is the concrete implementation (for example the code) of the agent function.
+rationality - the degree to which an agent appropriately responds to its sequence of percepts
+autonomy - the degree to which an agent percieves its task environment
+reflex agent - an agent which only responds to the current state of its task environment
+model-based agent - an agent that has a sense of how its world works and uses this sense of the internal and external factors that affect the world's state to decide its actions.
+goal-based agent - an agent that has some internal information about situations that are desireable, but not necessarily information on how to achieve that goal. The measure of whether an agent has reached its goal is generally binary.
+utility-based agent - an agent that internalizes the performance meausre
+learning agent - this is the actualization of turing's proposition of programming a "child machine", one which starts without deterministic knowledge of how to accomplish a task. instead, through an iterative process, the agent adjusts the "performance element" in response to feedback from its results. Neural networks are an example of the learning mechanism in such an agent program. 
 
 2.6 This exercise explores the differences between agent functions and agent programs.
 a. Can there be more than one agent program that implements a given agent function?
 Give an example, or show why one is not possible.
 
-
+As we saw in the text, various agent programs can be implemented for a single problem. 
+The book used the example of the vacuuming agent to show how various agent types can implement the same agent function.
 
 b. Are there agent functions that cannot be implemented by any agent program?
 
-
+So long as the agent function is a description of some tractible problem, there is an agent program that can be implemented.
 
 c. Given a fixed machine architecture, does each agent program implement exactly one
 agent function?
 
-
+No. Take for example that an architecture could be as general as a PC.
 
 d. Given an architecture with n bits of storage, how many different possible agent programs are there?
 
+n? 
