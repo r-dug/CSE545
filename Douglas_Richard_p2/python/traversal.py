@@ -12,7 +12,8 @@ from datetime import datetime
 from itertools import permutations
 import random
 from collections import deque
-# import tsp_parser
+
+# not actually sure if we need to call all of these static methods. I read somewhere that this is not necessary in newer python versions.
 class FullTraversal:
     @staticmethod
     def brute_force(parser):
@@ -41,6 +42,7 @@ class FullTraversal:
                 "cost": best_cost, 
                 "runtime":runtime,
                 "tsp_file": parser.path.split('/')[-1]})
+        return parser
 
     @staticmethod
     def brute_force_restart(parser):
@@ -73,6 +75,7 @@ class FullTraversal:
              "cost": best_cost, 
              "runtime":runtime,
              "tsp_file": parser.path.split('/')[-1]})
+        return parser
 
     @staticmethod
     def random(parser):
@@ -98,6 +101,7 @@ class FullTraversal:
              "cost": best_cost, 
              "runtime":runtime,
              "tsp_file": parser.path.split('/')[-1]})
+        return parser
 
     @staticmethod
     def greedy(parser):
@@ -126,7 +130,8 @@ class FullTraversal:
              "cost": best_cost, 
              "runtime":runtime,
              "tsp_file": parser.path.split('/')[-1]})
-    
+        return parser
+
     @staticmethod
     def random_restart(parser, runs):
         start = datetime.now()
@@ -161,7 +166,7 @@ class FullTraversal:
              "cost": best_cost, 
              "runtime":runtime,
              "tsp_file": parser.path.split('/')[-1]})
-
+        return parser
 
 # separate class for search functions in a directed graph...
 # we aren't going to assume we know a starting node or a destination. let's get closer to this being real and useful - gosh....

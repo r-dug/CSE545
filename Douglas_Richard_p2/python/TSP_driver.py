@@ -18,29 +18,31 @@ from traversal import FullTraversal
 from plotting import Plotting
 
 gc.set_threshold(0) # collect garbage manually...
-log_path = f"./logs/costs_{datetime.today().date()}.csv"
+log_fn = f"costs_{datetime.today().date()}.csv"
+log_dir = "./logs"
+log_path = f"{log_dir}/{log_fn}"
 
 def find_salespeople():
     tsps = []
-    for root, dirs, files in os.walk(os.getcwd()):
+    for root, dirs, files in os.walk("."):
         for file in files:
             if file.split('.')[-1] == "tsp":
                 tsps.append(f"{os.path.join(root,file)}")
     return tsps
 
 
-def tour(tsp_file):
+def tour(tsp_file, connection_type):
     tsp_file_name = tsp_file.split('/')[-1]
     print(f"iterating through: {tsp_file_name}")
-    for num in range(2,13):
-        parser = tsp_parser2.Parser(num, tsp_file, connection_type="full")
-        print(parser.nodes)
+    for num in range(2,10):
+        parser = tsp_parser2.Parser(tsp_file, num_nodes=num, connection_type=connection_type)
+        # FullTraversal object can actually modify the parser object passed into it. neat.
         FullTraversal.brute_force(parser)
         FullTraversal.brute_force_restart(parser)
         FullTraversal.random(parser)
-        parser.sort_costs(parser)
+        parser.sort_costs()
         FullTraversal.greedy(parser)
-        FullTraversal.random_restart(20000)
+        FullTraversal.random_restart(parser, 20000)
 
         for tour_cost in parser.tour_costs:
             cost_keys = list(tour_cost.keys())
@@ -54,48 +56,56 @@ def tour(tsp_file):
 
 def logging(log_path, headers, runtimes):
     header = None
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
+    if not os.path.isfile(log_path):
+        with open(log_path, "w", newline='') as log_file:
+            pass
     try:
         with open(log_path, "r", newline='') as log_file:
                 reader = csv.reader(log_file)
                 header = next(reader)
     except Exception as e: 
         print(e)
-    if header == None or header != headers:
-        with open(log_path, "w", newline='') as log_file:
-            log_writer = csv.writer(log_file)            
-            log_writer.writerow(headers)
-    else:
-        with open(log_path, "a", newline='') as log_file:
-            log_writer = csv.writer(log_file)
-            log_writer.writerow(runtimes)
-
+    try:
+        if header == None or header != headers:
+            with open(log_path, "w", newline='') as log_file:
+                log_writer = csv.writer(log_file)            
+                log_writer.writerow(headers)
+        else:
+            with open(log_path, "a", newline='') as log_file:
+                log_writer = csv.writer(log_file)
+                log_writer.writerow(runtimes)
+    except Exception as e:
+        print(e)
 def garbage_man(silent=False):
     unreachable_objects = gc.collect()
     if silent == False:
         print(f"Number of unreachable objects collected: {unreachable_objects}")
 
 
-if __name__ == "__main__":
+def main():
     garbage_man()
     parser = None
     try:
         tsps = find_salespeople()
-        print(tsps)
+        # print(tsps)
     except Exception as e:
         print(e)
         exit()
-    
-
-    for tsp in tsps:
-        
-        parser = tour(tsp)
-        
+    try:
+        for tsp in tsps:
+            parser = tour(tsp, "full")
+    except Exception as e:
+        print(e)
    
-        
     garbage_man()
-    tour_costs = parser.tour_costs
-    algo_list = list(set([tour_cost['algorithm'] for tour_cost in tour_costs]))
-    print(algo_list)
+    try:
+        tour_costs = parser.tour_costs
+        algo_list = list(set([tour_cost['algorithm'] for tour_cost in tour_costs]))
+    except Exception as e:
+        print(e)
+    
     try:
         Plotting.cost_plot(
             log_path, 
@@ -118,3 +128,4 @@ if __name__ == "__main__":
     
     garbage_man()
     exit()
+main()

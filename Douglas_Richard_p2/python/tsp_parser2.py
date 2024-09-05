@@ -128,7 +128,7 @@ class Parser:
         self.traps = traps
         self.loops = loops
 
-        # as of 8/26/24, these nodes don't do anything. 
+        # as of 8/26/24, these object vars don't do anything. 
         self.name = self.file_obj.readline()
         self.comment = self.file_obj.readline()
         self.file_type = self.file_obj.readline()
@@ -143,7 +143,7 @@ class Parser:
         elif connection_src == "random":
             self.connections = random_connections(self.nodes, self.traps, self.loops)
         if self.connection_type == "full":
-            self.nodes = fcg_costs(self.nodes, self.connections)
+            self.nodes = fcg_costs(self.nodes)
         elif self.connection_type == "directed":
             self.nodes = dg_costs(self.nodes, self.connections)
         self.tour_costs = []
