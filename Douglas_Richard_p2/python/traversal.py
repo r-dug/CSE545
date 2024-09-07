@@ -12,6 +12,15 @@ from datetime import datetime
 from itertools import permutations
 import random
 from collections import deque
+def calculate_cost(parser, path):
+    cost = 0
+    i = 0
+    j = 1
+    while j < len(path):
+        cost += parser.nodes[path[i]]["costs"][path[j]]
+        i += 1
+        j += 1
+    return cost
 
 # not actually sure if we need to call all of these static methods. I read somewhere that this is not necessary in newer python versions.
 class FullTraversal:
@@ -172,24 +181,60 @@ class FullTraversal:
 # we aren't going to assume we know a starting node or a destination. let's get closer to this being real and useful - gosh....
 class Directed:
     @staticmethod
-    def bfs_cost(parser, start_node, dest_node): # include branching rate? could that be useful in this context? the search space is finite, so maybe not... 
-
-        visited = [False] * len(parser.nodes.keys())
-        
+    def bfs_cost(parser, start_node, dest_node): # include branching rate? could that be useful in this context? the search space is finite, so maybe not...         
+        start = datetime.now()
         q = deque()
-
-        visited[start_node] = True
+        # start with a queue containing only start node
         q.append(start_node)
-
+        cost = 0
+        traversals = [[0]]
+        # we will look through all nodes and get all of the possible paths to our destination
         while q:
+            # pop this node from queue. on this iteration we'll have searched its adjacent nodes
             curr = q.popleft()
-
-            for node in parser.nodes[curr]["connections"].items():
-                if not node[0] in visited:
-                    continue
-
-
-
+            # emmpty list to contain all adjacent to this one
+            new_nodes = []
+            for node in parser.nodes[curr]["costs"].items():
+                # costs is a list of all adjacent nodes. we want to look through them in the future
+                q.append(node[0])
+                new_nodes.append(node[0])
+            # look through all paths we have trraversed looking for current node
+            for i in range(len(traversals)):
+                traversal = traversals[i]
+                if traversal[-1] == curr:
+                    # add paths to adjacencies
+                    for node in new_nodes:
+                        t = traversal+[node]
+                        traversals.append(t)
+                    # without this condition, we'll just empty the list at the destination node
+                    if len(new_nodes) > 0:
+                        traversals.pop(i)
+        traversals.sort(reverse=True)
+        # iterate through all paths to the destination, calculating the cost and updating the best cost, and calculating the least hops
+        best_cost = None
+        least_hops = None
+        for t in traversals:
+            hops = len(t)
+            cost = calculate_cost(parser, t)
+            if least_hops == None or hops < least_hops:
+                least_hops = hops
+                least_hops_path = t
+            if best_cost == None or cost < best_cost:
+                best_cost = cost
+                best_cost_path = t
+        runtime = datetime.now() - start
+        # log collected data in parser object
+        parser.tour_costs.append(
+            {
+                "algorithm":"bfs_cost", 
+                "input_size": len(list(parser.nodes.keys())), 
+                "best_cost": best_cost,
+                "best_cost__path": best_cost_path,
+                "least_hops": least_hops, 
+                "least_hops_path": least_hops_path,
+                "runtime":runtime,
+                "tsp_file": parser.path.split('/')[-1]
+            })
         return
     
     @staticmethod
@@ -200,7 +245,7 @@ class Directed:
         return
     
     @staticmethod
-    # fast search using incredibly simple heuristic of least cost to next node
+    # fast search using incredibly simple (very possibly BAD) heuristic of least cost to next node
     def greedy_cost(parser, start_node, dest_nodes):
 
 
