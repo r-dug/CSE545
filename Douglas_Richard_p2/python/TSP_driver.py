@@ -14,7 +14,7 @@ import gc
 # add libraries from the cwd into the PATH to allow local imports
 sys.path.append(os.getcwd())
 import tsp_parser2 
-from traversal import FullTraversal
+from traversal import Directed
 from plotting import Plotting
 
 gc.set_threshold(0) # collect garbage manually...
@@ -31,20 +31,20 @@ def find_salespeople():
     return tsps
 
 
-def tour(tsp_file, connection_type):
-    tsp_file_name = tsp_file.split('/')[-1]
+def tour(tsp_file):
+    tsp_file_name = str(tsp_file.split('/')[-1])
     print(f"iterating through: {tsp_file_name}")
-    for num in range(2,10):
-        parser = tsp_parser2.Parser(tsp_file, num_nodes=num, connection_type=connection_type)
-        # FullTraversal object can actually modify the parser object passed into it. neat.
-        FullTraversal.brute_force(parser)
-        FullTraversal.brute_force_restart(parser)
-        FullTraversal.random(parser)
-        parser.sort_costs()
-        FullTraversal.greedy(parser)
-        FullTraversal.random_restart(parser, 20000)
+    
+    n = 10
+    m = "static"
+    # FullTraversal object can actually modify the parser object passed into it. neat.
+    for num in range(2,n):
+        prsr1 = tsp_parser2.Parser(tsp_file, num_nodes=num, connection_src=m)
+        Directed().bfs_cost(prsr1, 0, dest_node=num-1)
+        Directed().dfs_cost(prsr1, 0, dest_node=num-1)
+        Directed().greedy_cost(prsr1, 0, dest_node=num-1)
 
-        for tour_cost in parser.tour_costs:
+        for tour_cost in prsr1.tour_costs:
             cost_keys = list(tour_cost.keys())
             cost_vals = [tour_cost[key] for key in cost_keys]
             logging(
@@ -52,7 +52,7 @@ def tour(tsp_file, connection_type):
                 cost_keys, 
                 cost_vals
                 )
-    return parser
+    return prsr1
 
 def logging(log_path, headers, runtimes):
     header = None
@@ -95,7 +95,7 @@ def main():
         exit()
     try:
         for tsp in tsps:
-            parser = tour(tsp, "full")
+            parser = tour(tsp)
     except Exception as e:
         print(e)
    
@@ -106,25 +106,21 @@ def main():
     except Exception as e:
         print(e)
     
-    try:
-        Plotting.cost_plot(
-            log_path, 
-            hue_priority=algo_list,
-            file_value=None)#tsps[0].split('/')[-1]
-    except Exception as e:
-        print(e)
-        exit()
+    
+    Plotting.cost_plot(
+        log_path, 
+        hue_priority=algo_list,
+        file_value=None)#tsps[0].split('/')[-1]
+
     
     garbage_man()
 
-    try:
-        Plotting.runtime_plot(
-            log_path,
-            hue_priority=algo_list,
-            file_value=None)#tsps[0].split('/')[-1]
-    except Exception as e:
-        print(e)
-        exit()
+
+    Plotting.runtime_plot(
+        log_path,
+        hue_priority=algo_list,
+        file_value=None)#tsps[0].split('/')[-1]
+
     
     garbage_man()
     exit()

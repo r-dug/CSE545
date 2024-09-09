@@ -46,7 +46,7 @@ class Plotting:
         
         sns.set_theme(style="darkgrid")
         sns.color_palette("husl", 9)
-        sns.catplot(x='input_size', y='cost', hue='algorithm', sharex=False, kind="swarm", hue_order=hue_priority, data=df)
+        sns.catplot(x='input_size', y='best_cost', hue='algorithm', sharex=False, kind="swarm", hue_order=hue_priority, data=df)
         
         plt.xlabel('Input Size')
         plt.ylabel('Cost')

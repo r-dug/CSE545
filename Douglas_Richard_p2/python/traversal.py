@@ -12,6 +12,7 @@ from datetime import datetime
 from itertools import permutations
 import random
 from collections import deque
+import math
 def calculate_cost(parser, path):
     cost = 0
     i = 0
@@ -21,7 +22,96 @@ def calculate_cost(parser, path):
         i += 1
         j += 1
     return cost
+def dfs_rec(adj, visited, s, d, t, r, best_cost, lh, lhp, parser):
+    visited[s] = True
 
+    # Recursively visit all adjacent vertices
+    for i in adj[s]:
+        if not visited[i]:
+            temp = t.copy()  # Create a copy of the current path
+            temp.append(i)   # Add the next node to the path
+            cost = calculate_cost(parser, temp)
+            if cost > best_cost[0]:
+                continue
+            if i == d:
+                if len(temp) < lh[0]:
+                    lh[0] = len(temp)
+                    lhp[:] = temp
+                if cost < best_cost[0]:
+                    best_cost[0] = cost
+                    r[:] = temp
+            else:
+                # Continue the recursion if destination not found
+                dfs_rec(adj, visited, i, d, temp, r, best_cost, lh, lhp, parser)
+    
+    # Mark the current node as unvisited for other paths (backtracking)
+    visited[s] = False
+
+# the only difference we want here is to return the first valid result instead of all valid results
+def greedy_rec(adj, visited, s, d, t, r, best_cost, lh, lhp, parser):
+    visited[s] = True
+
+    # Recursively visit all adjacent vertices
+    for i in adj[s]:
+        if not visited[i]:
+            temp = t.copy()  # Create a copy of the current path
+            temp.append(i)   # Add the next node to the path
+            cost = calculate_cost(parser, temp)
+            if cost > best_cost[0]:
+                continue
+            if i == d:
+                if len(temp) < lh[0]:
+                    lh[0] = len(temp)
+                    lhp[:] = temp
+                if best_cost[0] == float("inf"): # this will only ever be triggered once
+                    best_cost[0] = cost
+                    r[:] = temp
+                    break # swe can break the loop here, and no more recursive calls will be made
+                    # kinda hackey solution
+            else:
+                # Continue the recursion if destination not found
+                dfs_rec(adj, visited, i, d, temp, r, best_cost, lh, lhp, parser)
+    
+    # Mark the current node as unvisited for other paths (backtracking)
+    visited[s] = False
+
+def a_star_costs(parser, d):
+    for node in parser.nodes:
+        parser.nodes[node]["a_star_costs"] = {}
+        for n in parser.nodes[node]["costs"]:
+            to_next = parser.nodes[node]['costs'][n]
+            next_x, next_y = parser.nodes[n]['xy']
+            dest_x, dest_y = parser.nodes[d]['xy']
+            dist = (dest_x-next_x)**2+(dest_y-next_y)**2
+            to_dest = math.sqrt(dist)
+            parser.nodes[node]["a_star_costs"][n] =  to_dest + to_next
+
+def a_star_rec(parser, adj, visited, s, d, t):
+    # Mark the current vertex as visited
+    visited[s] = True
+    
+    # If the current node is the destination, return the path
+    if s == d:
+        return t
+
+    # Recursively visit all adjacent vertices
+    for i in adj[s]:
+        if not visited[i]:
+            # calculate sum of cost to next node and next node to destination
+            temp = t.copy()  # Copy the current path to avoid modifying it
+            temp.append(i)    # Add the next node to the path
+            result = greedy_rec(adj, visited, i, d, temp)
+            if result is not None:
+                return result  # Return the first valid path found
+    
+    # Backtrack: unmark the current node as visited
+    visited[s] = False
+
+    # If no valid path is found in this branch, return None
+    return None
+def add_edge(adj, s, t):
+    # Add edge from vertex s to t
+    adj[s].append(t)
 # not actually sure if we need to call all of these static methods. I read somewhere that this is not necessary in newer python versions.
 class FullTraversal:
     @staticmethod
@@ -177,56 +267,59 @@ class FullTraversal:
              "tsp_file": parser.path.split('/')[-1]})
         return parser
 
+
 # separate class for search functions in a directed graph...
 # we aren't going to assume we know a starting node or a destination. let's get closer to this being real and useful - gosh....
 class Directed:
+
     @staticmethod
     def bfs_cost(parser, start_node, dest_node): # include branching rate? could that be useful in this context? the search space is finite, so maybe not...         
-        start = datetime.now()
+        start = datetime.now()  
         q = deque()
-        # start with a queue containing only start node
-        q.append(start_node)
-        cost = 0
-        traversals = [[0]]
-        # we will look through all nodes and get all of the possible paths to our destination
+        V = [False] * len(parser.nodes.keys())  # Visited array
+
+        # Start with the start node in the queue
+        q.append((start_node, [start_node]))  # (current node, path leading to it)
+        
+        least_hops_path = None
+        best_cost_path = None
+        least_hops = float('inf')
+        best_cost = float('inf')
+
         while q:
-            # pop this node from queue. on this iteration we'll have searched its adjacent nodes
-            curr = q.popleft()
-            # emmpty list to contain all adjacent to this one
-            new_nodes = []
-            for node in parser.nodes[curr]["costs"].items():
-                # costs is a list of all adjacent nodes. we want to look through them in the future
-                q.append(node[0])
-                new_nodes.append(node[0])
-            # look through all paths we have trraversed looking for current node
-            for i in range(len(traversals)):
-                traversal = traversals[i]
-                if traversal[-1] == curr:
-                    # add paths to adjacencies
-                    for node in new_nodes:
-                        t = traversal+[node]
-                        traversals.append(t)
-                    # without this condition, we'll just empty the list at the destination node
-                    if len(new_nodes) > 0:
-                        traversals.pop(i)
-        traversals.sort(reverse=True)
-        # iterate through all paths to the destination, calculating the cost and updating the best cost, and calculating the least hops
-        best_cost = None
-        least_hops = None
-        for t in traversals:
-            hops = len(t)
-            cost = calculate_cost(parser, t)
-            if least_hops == None or hops < least_hops:
-                least_hops = hops
-                least_hops_path = t
-            if best_cost == None or cost < best_cost:
-                best_cost = cost
-                best_cost_path = t
+            # Pop the front of the queue (BFS explores level-by-level)
+            curr, path = q.popleft()
+
+            # If we reach the destination, calculate the cost and hops
+            if curr == dest_node:
+                hops = len(path) - 1
+                cost = calculate_cost(parser, path)
+
+                # Update least hops if applicable
+                if hops < least_hops:
+                    least_hops = hops
+                    least_hops_path = path
+
+                # Update best cost if applicable
+                if cost < best_cost:
+                    best_cost = cost
+                    best_cost_path = path
+
+                # Since this is BFS, we could break here if we're only concerned with the first valid path
+
+            # Mark current node as visited
+            V[curr] = True
+
+            # Explore all adjacent nodes
+            for neighbor, cost in parser.nodes[curr]["costs"].items():
+                if not V[neighbor]:
+                    # Append the neighbor node to the path and add it to the queue
+                    q.append((neighbor, path + [neighbor]))
         runtime = datetime.now() - start
         # log collected data in parser object
         parser.tour_costs.append(
             {
-                "algorithm":"bfs_cost", 
+                "algorithm":"bfs", 
                 "input_size": len(list(parser.nodes.keys())), 
                 "best_cost": best_cost,
                 "best_cost__path": best_cost_path,
@@ -235,28 +328,83 @@ class Directed:
                 "runtime":runtime,
                 "tsp_file": parser.path.split('/')[-1]
             })
-        return
     
     @staticmethod
     # we are simply going to iterate through paths numerically in this implementation and track the best path so far
-    def dfs_cost(parser, start_node, dest_nodes):
-
-
-        return
+    def dfs_cost(parser, start_node, dest_node):
+        start = datetime.now()
+        # start by sorting the costs. simplifies algorithm
+        adj = [[] for node in parser.nodes]
+        for node in parser.nodes:
+            for connection in parser.nodes[node]["costs"].items():
+                add_edge(adj, node, connection[0])
+        visited = [False] * len(adj)
+        traversal = [start_node]
+        best_cost = [float("inf")]
+        best_cost_path = []
+        least_hops = [float("inf")]
+        least_hops_path = []
+        # dfs_rec(adj, visited, s, d, t, r, best_cost, lh, lhp, parser):
+        dfs_rec(adj, visited, start_node, dest_node, traversal, best_cost_path, best_cost, least_hops, least_hops_path, parser)
+        runtime = datetime.now() - start
+        # log collected data in parser object
+        if best_cost[0] != float('inf'):
+            parser.tour_costs.append(
+                {
+                    "algorithm":"dfs", 
+                    "input_size": len(list(parser.nodes.keys())), 
+                    "best_cost": best_cost[0],
+                    "best_cost__path": best_cost_path,
+                    "least_hops": least_hops[0], 
+                    "least_hops_path": least_hops_path,
+                    "runtime":runtime,
+                    "tsp_file": parser.path.split('/')[-1]
+                })
     
     @staticmethod
     # fast search using incredibly simple (very possibly BAD) heuristic of least cost to next node
-    def greedy_cost(parser, start_node, dest_nodes):
+    def greedy_cost(parser, start_node, dest_node):
+        start = datetime.now()
+        # start by sorting the costs. simplifies algorithm
+        parser.sort_costs()
+        adj = [[] for _ in parser.nodes]
+        for node in parser.nodes:
+            for connection in parser.nodes[node]["costs"].items():
+                add_edge(adj, node, connection[0])
 
+        # simply look for the closest node and move to it if not visited.
+        visited = [False] * len(adj)
+        traversal = [start_node]
+        best_cost = [float("inf")]
+        best_cost_path = []
+        least_hops = [float("inf")]
+        least_hops_path = []
+        # dfs_rec(adj, visited, s, d, t, r, best_cost, lh, lhp, parser):
+        dfs_rec(adj, visited, start_node, dest_node, traversal, best_cost_path, best_cost, least_hops, least_hops_path, parser)
 
-        return
+        runtime = datetime.now() - start
+        # log collected data in parser object
+        if best_cost[0] != float('inf'):
+            parser.tour_costs.append(
+                {
+                    "algorithm":"greedy", 
+                    "input_size": len(list(parser.nodes.keys())), 
+                    "best_cost": best_cost[0],
+                    "best_cost__path": best_cost_path,
+                    "least_hops": least_hops[0], 
+                    "least_hops_path": least_hops_path,
+                    "runtime":runtime,
+                    "tsp_file": parser.path.split('/')[-1]
+                })
     
     @staticmethod
     # A better heuristic: which directly connected node is closest to the goal node
-    def a_star(parser, start_node, dest_nodes):
+    def a_star(parser, start_node, dest_node):
+        a_star_costs(parser, dest_node)
+        for node in parser.nodes:
+            print(node)
+            print(parser.nodes[node]["a_star_costs"])
         
-
-        return
     
     @staticmethod
     # maybe an even better heuristic: which directly connected node has the lowest combined value of (dist from current + dist to goal)

@@ -69,21 +69,17 @@ def random_connections(nodes, loops, traps):
     for i in node_names:
         connections[i]={}
         for j in node_names:
-            if i == len(node_names): # last node is the only trap node allowed.
+            if i == len(node_names) or i>=j: 
                 connections[i][j] = False
                 continue
-            if random.randint(0,100)%5 == 0: # ~(1/5)x(1/n^2) chance of true connection assignment
-                # prevent loopback nodes by default
-                if i == j and loops == False:
-                    connections[i][j] = False
-                    continue
+            if random.randint(0,100)%5 == 0: 
                 connections[i][j] = True
             else:
                 connections[i][j] = False
+
         
-        if (not True in connections[i].values()) and traps == False and (int(i) != len(node_names)):
-            # print(f'connection added. trap prevented at connection {i}:{str(int(i)+1)}.')
-            connections[i][str(int(i)+1)] = True
+        if (not True in connections[i].values()):
+            connections[i][i+1] = True
     return connections
 
 def fcg_costs(nodes):
