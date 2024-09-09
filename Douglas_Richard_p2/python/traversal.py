@@ -13,6 +13,8 @@ from itertools import permutations
 import random
 from collections import deque
 import math
+import gui
+
 def calculate_cost(parser, path):
     cost = 0
     i = 0
@@ -22,12 +24,14 @@ def calculate_cost(parser, path):
         i += 1
         j += 1
     return cost
-def dfs_rec(adj, visited, s, d, t, r, best_cost, lh, lhp, parser):
+def dfs_rec(adj, visited, s, d, t, r, best_cost, lh, lhp, parser, tsp_gui):
     visited[s] = True
-
+    
     # Recursively visit all adjacent vertices
     for i in adj[s]:
+        
         if not visited[i]:
+            
             temp = t.copy()  # Create a copy of the current path
             temp.append(i)   # Add the next node to the path
             cost = calculate_cost(parser, temp)
@@ -42,7 +46,8 @@ def dfs_rec(adj, visited, s, d, t, r, best_cost, lh, lhp, parser):
                     r[:] = temp
             else:
                 # Continue the recursion if destination not found
-                dfs_rec(adj, visited, i, d, temp, r, best_cost, lh, lhp, parser)
+                dfs_rec(adj, visited, i, d, temp, r, best_cost, lh, lhp, parser, tsp_gui)
+    gui.animate(tsp_gui, "dfs", t)
     
     # Mark the current node as unvisited for other paths (backtracking)
     visited[s] = False
@@ -274,6 +279,7 @@ class Directed:
 
     @staticmethod
     def bfs_cost(parser, start_node, dest_node): # include branching rate? could that be useful in this context? the search space is finite, so maybe not...         
+        tsp_gui = gui.GraphApp(parser)
         start = datetime.now()  
         q = deque()
         V = [False] * len(parser.nodes.keys())  # Visited array
@@ -289,6 +295,7 @@ class Directed:
         while q:
             # Pop the front of the queue (BFS explores level-by-level)
             curr, path = q.popleft()
+            gui.animate(tsp_gui, "dfs", path)
 
             # If we reach the destination, calculate the cost and hops
             if curr == dest_node:
@@ -322,7 +329,7 @@ class Directed:
                 "algorithm":"bfs", 
                 "input_size": len(list(parser.nodes.keys())), 
                 "best_cost": best_cost,
-                "best_cost__path": best_cost_path,
+                "best_cost_path": best_cost_path,
                 "least_hops": least_hops, 
                 "least_hops_path": least_hops_path,
                 "runtime":runtime,
@@ -332,6 +339,7 @@ class Directed:
     @staticmethod
     # we are simply going to iterate through paths numerically in this implementation and track the best path so far
     def dfs_cost(parser, start_node, dest_node):
+        tsp_gui = gui.GraphApp(parser)
         start = datetime.now()
         # start by sorting the costs. simplifies algorithm
         adj = [[] for node in parser.nodes]
@@ -345,7 +353,7 @@ class Directed:
         least_hops = [float("inf")]
         least_hops_path = []
         # dfs_rec(adj, visited, s, d, t, r, best_cost, lh, lhp, parser):
-        dfs_rec(adj, visited, start_node, dest_node, traversal, best_cost_path, best_cost, least_hops, least_hops_path, parser)
+        dfs_rec(adj, visited, start_node, dest_node, traversal, best_cost_path, best_cost, least_hops, least_hops_path, parser, tsp_gui)
         runtime = datetime.now() - start
         # log collected data in parser object
         if best_cost[0] != float('inf'):
@@ -354,7 +362,7 @@ class Directed:
                     "algorithm":"dfs", 
                     "input_size": len(list(parser.nodes.keys())), 
                     "best_cost": best_cost[0],
-                    "best_cost__path": best_cost_path,
+                    "best_cost_path": best_cost_path,
                     "least_hops": least_hops[0], 
                     "least_hops_path": least_hops_path,
                     "runtime":runtime,
@@ -364,6 +372,7 @@ class Directed:
     @staticmethod
     # fast search using incredibly simple (very possibly BAD) heuristic of least cost to next node
     def greedy_cost(parser, start_node, dest_node):
+        tsp_gui = gui.GraphApp(parser)
         start = datetime.now()
         # start by sorting the costs. simplifies algorithm
         parser.sort_costs()
@@ -380,7 +389,7 @@ class Directed:
         least_hops = [float("inf")]
         least_hops_path = []
         # dfs_rec(adj, visited, s, d, t, r, best_cost, lh, lhp, parser):
-        dfs_rec(adj, visited, start_node, dest_node, traversal, best_cost_path, best_cost, least_hops, least_hops_path, parser)
+        dfs_rec(adj, visited, start_node, dest_node, traversal, best_cost_path, best_cost, least_hops, least_hops_path, parser, tsp_gui)
 
         runtime = datetime.now() - start
         # log collected data in parser object
@@ -390,7 +399,7 @@ class Directed:
                     "algorithm":"greedy", 
                     "input_size": len(list(parser.nodes.keys())), 
                     "best_cost": best_cost[0],
-                    "best_cost__path": best_cost_path,
+                    "best_cost_path": best_cost_path,
                     "least_hops": least_hops[0], 
                     "least_hops_path": least_hops_path,
                     "runtime":runtime,

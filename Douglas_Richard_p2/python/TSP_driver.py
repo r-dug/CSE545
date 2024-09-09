@@ -13,6 +13,7 @@ import csv
 import gc
 # add libraries from the cwd into the PATH to allow local imports
 sys.path.append(os.getcwd())
+import gui
 import tsp_parser2 
 from traversal import Directed
 from plotting import Plotting
@@ -38,11 +39,16 @@ def tour(tsp_file):
     n = 10
     m = "static"
     # FullTraversal object can actually modify the parser object passed into it. neat.
-    for num in range(2,n):
+    for num in [n]:
         prsr1 = tsp_parser2.Parser(tsp_file, num_nodes=num, connection_src=m)
         Directed().bfs_cost(prsr1, 0, dest_node=num-1)
         Directed().dfs_cost(prsr1, 0, dest_node=num-1)
         Directed().greedy_cost(prsr1, 0, dest_node=num-1)
+        # animation of traversal with algorithm 
+        tsp_gui = gui.GraphApp(prsr1)
+        for tour_cost in prsr1.tour_costs:
+            gui.animate(tsp_gui, tour_cost["algorithm"], tour_cost["best_cost_path"])
+
 
         for tour_cost in prsr1.tour_costs:
             cost_keys = list(tour_cost.keys())
