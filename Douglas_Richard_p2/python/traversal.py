@@ -26,7 +26,7 @@ def calculate_cost(parser, path):
     return cost
 def dfs_rec(adj, visited, s, d, t, r, best_cost, lh, lhp, parser, tsp_gui):
     visited[s] = True
-    
+    temp = []
     # Recursively visit all adjacent vertices
     for i in adj[s]:
         
@@ -47,18 +47,20 @@ def dfs_rec(adj, visited, s, d, t, r, best_cost, lh, lhp, parser, tsp_gui):
             else:
                 # Continue the recursion if destination not found
                 dfs_rec(adj, visited, i, d, temp, r, best_cost, lh, lhp, parser, tsp_gui)
-    gui.animate(tsp_gui, "dfs", t)
+    # gui.animate(tsp_gui, "dfs", temp, d, best_cost)
     
     # Mark the current node as unvisited for other paths (backtracking)
     visited[s] = False
 
 # the only difference we want here is to return the first valid result instead of all valid results
-def greedy_rec(adj, visited, s, d, t, r, best_cost, lh, lhp, parser):
+def greedy_rec(adj, visited, s, d, t, r, best_cost, lh, lhp, parser, tsp_gui):
     visited[s] = True
-
+    temp = []
     # Recursively visit all adjacent vertices
     for i in adj[s]:
+        
         if not visited[i]:
+            
             temp = t.copy()  # Create a copy of the current path
             temp.append(i)   # Add the next node to the path
             cost = calculate_cost(parser, temp)
@@ -68,15 +70,17 @@ def greedy_rec(adj, visited, s, d, t, r, best_cost, lh, lhp, parser):
                 if len(temp) < lh[0]:
                     lh[0] = len(temp)
                     lhp[:] = temp
-                if best_cost[0] == float("inf"): # this will only ever be triggered once
+                if cost < best_cost[0]:
                     best_cost[0] = cost
                     r[:] = temp
-                    break # swe can break the loop here, and no more recursive calls will be made
-                    # kinda hackey solution
+                    break
             else:
                 # Continue the recursion if destination not found
-                dfs_rec(adj, visited, i, d, temp, r, best_cost, lh, lhp, parser)
+                greedy_rec(adj, visited, i, d, temp, r, best_cost, lh, lhp, parser, tsp_gui)
+    # gui.animate(tsp_gui, "greedy", temp, d, best_cost)
     
+    # Mark the current node as unvisited for other paths (backtracking)
+    visited[s] = False
     # Mark the current node as unvisited for other paths (backtracking)
     visited[s] = False
 
@@ -278,8 +282,7 @@ class FullTraversal:
 class Directed:
 
     @staticmethod
-    def bfs_cost(parser, start_node, dest_node): # include branching rate? could that be useful in this context? the search space is finite, so maybe not...         
-        tsp_gui = gui.GraphApp(parser)
+    def bfs_cost(parser, start_node, dest_node, tsp_gui): # include branching rate? could that be useful in this context? the search space is finite, so maybe not...         
         start = datetime.now()  
         q = deque()
         V = [False] * len(parser.nodes.keys())  # Visited array
@@ -295,13 +298,14 @@ class Directed:
         while q:
             # Pop the front of the queue (BFS explores level-by-level)
             curr, path = q.popleft()
-            gui.animate(tsp_gui, "dfs", path)
+            # gui.animate(tsp_gui, "bfs", path, dest_node, best_cost)
 
             # If we reach the destination, calculate the cost and hops
+            cost = calculate_cost(parser, path)
+            hops = len(path) - 1
+            if cost < best_cost or hops > least_hops:
+                continue
             if curr == dest_node:
-                hops = len(path) - 1
-                cost = calculate_cost(parser, path)
-
                 # Update least hops if applicable
                 if hops < least_hops:
                     least_hops = hops
@@ -338,8 +342,8 @@ class Directed:
     
     @staticmethod
     # we are simply going to iterate through paths numerically in this implementation and track the best path so far
-    def dfs_cost(parser, start_node, dest_node):
-        tsp_gui = gui.GraphApp(parser)
+    def dfs_cost(parser, start_node, dest_node, tsp_gui):
+        
         start = datetime.now()
         # start by sorting the costs. simplifies algorithm
         adj = [[] for node in parser.nodes]
@@ -352,7 +356,6 @@ class Directed:
         best_cost_path = []
         least_hops = [float("inf")]
         least_hops_path = []
-        # dfs_rec(adj, visited, s, d, t, r, best_cost, lh, lhp, parser):
         dfs_rec(adj, visited, start_node, dest_node, traversal, best_cost_path, best_cost, least_hops, least_hops_path, parser, tsp_gui)
         runtime = datetime.now() - start
         # log collected data in parser object
@@ -371,8 +374,7 @@ class Directed:
     
     @staticmethod
     # fast search using incredibly simple (very possibly BAD) heuristic of least cost to next node
-    def greedy_cost(parser, start_node, dest_node):
-        tsp_gui = gui.GraphApp(parser)
+    def greedy_cost(parser, start_node, dest_node, tsp_gui):
         start = datetime.now()
         # start by sorting the costs. simplifies algorithm
         parser.sort_costs()
@@ -388,8 +390,7 @@ class Directed:
         best_cost_path = []
         least_hops = [float("inf")]
         least_hops_path = []
-        # dfs_rec(adj, visited, s, d, t, r, best_cost, lh, lhp, parser):
-        dfs_rec(adj, visited, start_node, dest_node, traversal, best_cost_path, best_cost, least_hops, least_hops_path, parser, tsp_gui)
+        greedy_rec(adj, visited, start_node, dest_node, traversal, best_cost_path, best_cost, least_hops, least_hops_path, parser, tsp_gui)
 
         runtime = datetime.now() - start
         # log collected data in parser object

@@ -65,13 +65,15 @@ class GraphApp:
         self.canvas.draw()
         self.canvas.get_tk_widget().pack(fill=BOTH, expand=True)
 
-    def update(self, node_change, edge_change):
+    def update(self, node_change, edge_change, dest):
         self.ax.clear()  # Clear the previous frame
         node_change_idx = list(self.graph.nodes).index(node_change)
+        dest_idx = list(self.graph.nodes).index(dest)
         edge_change_idx = list(self.graph.edges).index(edge_change)
         # Randomly generate colors for nodes and edges
         node_colors = ['blue' for _ in range(len(self.graph.nodes))]
         edge_colors = ['magenta' for _ in range(len(self.graph.edges))]
+        node_colors[dest_idx] = 'green'
         node_colors[node_change_idx] = 'red'
         if edge_change != None:
             edge_colors[edge_change_idx] = 'yellow'
@@ -81,17 +83,34 @@ class GraphApp:
         nx.draw_networkx_edge_labels(self.graph, self.pos,edge_labels=self.edge_labels)
 
         self.canvas.draw()
+def save_animation(app, tour, filename):
+    fig = app.figure
+    def update_func(i):
+        edge = (tour[i], tour[i+1])
+        app.update(tour[i+1], edge)
+
+    ani = animation.FuncAnimation(fig, update_func, frames=len(tour)-1, repeat=False)
+    ani.save(filename, writer='ffmpeg', fps=50)  # Saving as .mp4
 
 
-def animate (app, label, tour):
+def animate (app, label, tour, dest, best_cost):
     app.label = label
+    app.root.title(f"Visualization {label}")
+
     for i in range(len(tour)-1):
         edge = (tour[i], tour[i+1])
         cost = app.parser.nodes[edge[0]]["costs"][edge[1]]
-        cost_info = f"Cost from {edge[0]} to {edge[1]}: {cost}\n"
+        cost_info = f"Cost from {edge[0]} to {edge[1]}: {cost}\n best cost {best_cost}"
         app.T.delete("0.0", END)
         app.T.insert(END, cost_info)
-        app.update(edge[1], edge)
+        app.update(edge[1], edge, dest)
         app.root.update_idletasks()
         app.root.update()
-        time.sleep(.5)
+        if edge[1] == dest: 
+            success_msg = f"SUCCESSFUL PATH: {tour} \ncost: {best_cost}\n"
+            app.T.delete("0.0", END)
+            app.T.insert(END, success_msg)
+            app.root.update_idletasks()
+            app.root.update()
+            time.sleep(3)
+        time.sleep(.1)
