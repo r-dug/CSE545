@@ -288,9 +288,9 @@ class FullTraversal:
         visited = [start_node, near1, near2, start_node]
         unvisited = set(parser.nodes.keys())-set(visited)
         best_cost = 0
-        while len(visited) < len(parser.nodes):
+        while len(visited) < len(parser.nodes)+1:
             temp_path = visited            
-            next_node, closest = gi_h(parser, visited, unvisited)
+            next_node, closest = gi_h(parser, visited, unvisited, visited[-1], visited[-2])
             visited.insert(visited.index(closest), next_node)
             unvisited.remove(next_node)
 
@@ -305,7 +305,6 @@ class FullTraversal:
              "runtime":runtime,
              "tsp_file": parser.path.split('/')[-1]})
         return best_cost
-
     @staticmethod
     def random_restart(parser, runs):
         start = datetime.now()

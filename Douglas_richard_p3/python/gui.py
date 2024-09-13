@@ -47,14 +47,14 @@ class GraphApp:
         self.graph.add_edges_from(self.edges, pos=self.pos, fixed=self.edges)
 
         # Create a figure
-        self.figure = plt.Figure(figsize=(50, 50))
+        self.figure = plt.Figure(figsize=(5, 5), dpi=100)
         self.ax = self.figure.add_subplot(111)
 
         # Use the predefined coordinates for the node positions
         self.pos = {node: (data['xy'][0], data['xy'][1]) for node, data in self.parser.nodes.items()}
 
         # Draw the graph using the predefined layout
-        nx.draw(self.graph, self.pos, ax=self.ax, with_labels=True, node_color='skyblue', node_size=7, font_size=0)
+        nx.draw(self.graph, self.pos, ax=self.ax, with_labels=True, node_color='skyblue', node_size=700, font_size=15)
         nx.draw_networkx_edge_labels(self.graph, self.pos, edge_labels=self.edge_labels)
 
         # Embedding the plot in the Tkinter GUI
@@ -85,7 +85,7 @@ class GraphApp:
         node_colors[dest_idx] = 'green'
         
         # Draw the graph with updated colors
-        nx.draw_networkx_nodes(self.graph, self.pos, ax=self.ax, node_color=node_colors, node_size=7)
+        nx.draw_networkx_nodes(self.graph, self.pos, ax=self.ax, node_color=node_colors, node_size=700)
         nx.draw_networkx_edges(self.graph, self.pos, edgelist=edges, ax=self.ax)
         nx.draw_networkx_edge_labels(self.graph, self.pos,edge_labels=self.edge_labels)
 
