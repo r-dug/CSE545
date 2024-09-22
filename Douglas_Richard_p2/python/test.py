@@ -12,15 +12,13 @@ def bfs(tsp_file):
     prsr1 = Parser(tsp_file, verbose = True)
     for num in [5,7,8,10]:
         Directed().bfs_cost(prsr1, 0, dest_node=num)
-    for cost in prsr1.tour_costs:
-        print(cost)
+
 
 def bfs_rand(tsp_file):
     prsr1 = Parser(tsp_file, num_nodes=61, connection_src="random", verbose = True)
     for num in [5,7,8,10]:
         Directed().bfs_cost(prsr1, 0, dest_node=num)
-    for cost in prsr1.tour_costs:
-        print(cost)
+
 
 def dfs(tsp_file):
     prsr1 = Parser(tsp_file, verbose = True)

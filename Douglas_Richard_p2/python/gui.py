@@ -14,9 +14,10 @@ class GraphApp:
     def __init__(self, parser):
         self.label = ''
         self.root = Tk()
+        self.root.geometry("400x400")
         self.root.title(f"Visualization {self.label}")
         # Create text widget and specify size.
-        self.T = Text(self.root, height = 5, width = 52)
+        self.T = Text(self.root, height = 10, width = 100)
         self.T.pack()
 
         # Create a frame for the matplotlib figure
@@ -30,9 +31,7 @@ class GraphApp:
 
     def create_graph(self):
         nodes = self.parser.nodes
-        print(nodes)
         self.graph = nx.DiGraph()
-        self.edge_labels = {}
         self.edges = []
         self.pos = { }
         for node in nodes.keys():
@@ -40,14 +39,13 @@ class GraphApp:
             for connection in nodes[node]['costs'].keys():
                 edge = (node, connection)
                 self.edges.append(edge)
-                self.edge_labels[edge] = nodes[node]['costs'][connection]
 
     def draw_graph(self):
     # Adding nodes and edges
         self.graph.add_edges_from(self.edges, pos=self.pos, fixed=self.edges)
 
         # Create a figure
-        self.figure = plt.Figure(figsize=(50, 50))
+        self.figure = plt.Figure(figsize=(100, 100))
         self.ax = self.figure.add_subplot(111)
 
         # Use the predefined coordinates for the node positions
@@ -55,7 +53,6 @@ class GraphApp:
 
         # Draw the graph using the predefined layout
         nx.draw(self.graph, self.pos, ax=self.ax, with_labels=True, node_color='skyblue', node_size=7, font_size=0)
-        nx.draw_networkx_edge_labels(self.graph, self.pos, edge_labels=self.edge_labels)
 
         # Embedding the plot in the Tkinter GUI
         self.canvas = FigureCanvasTkAgg(self.figure, self.frame)
@@ -87,7 +84,7 @@ class GraphApp:
         # Draw the graph with updated colors
         nx.draw_networkx_nodes(self.graph, self.pos, ax=self.ax, node_color=node_colors, node_size=7)
         nx.draw_networkx_edges(self.graph, self.pos, edgelist=edges, ax=self.ax)
-        nx.draw_networkx_edge_labels(self.graph, self.pos,edge_labels=self.edge_labels)
+        # nx.draw_networkx_edge_labels(self.graph, self.pos,edge_labels=self.edge_labels)
 
         self.canvas.draw()
 def save_animation(app, tour, filename):

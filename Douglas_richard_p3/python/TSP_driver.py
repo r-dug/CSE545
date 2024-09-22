@@ -40,9 +40,9 @@ def tour(tsp_file):
     # FullTraversal object can actually modify the parser object passed into it. neat.
     prsr1 = tsp_parser2.Parser(tsp_file,connection_type="full", connection_src=m)
     tsp_gui = gui.GraphApp(prsr1)
-
+    FullTraversal().greedy(prsr1, tsp_gui)
     FullTraversal().greedy_insertion(prsr1, tsp_gui)
-    print(4)
+    # FullTraversal().random_restart(prsr1, 100000, tsp_gui)
     for tour_cost in prsr1.tour_costs:
         cost_keys = list(tour_cost.keys())
         cost_vals = [tour_cost[key] for key in cost_keys]
@@ -55,11 +55,13 @@ def tour(tsp_file):
 
 def logging(log_path, headers, runtimes):
     header = None
+    # look for dir if not found, make it
     if not os.path.exists(log_dir):
         os.mkdir(log_dir)
     if not os.path.isfile(log_path):
         with open(log_path, "w", newline='') as log_file:
             pass
+    # try reading the headers, if none they don't match those found in log output write the file with appropriate headers
     try:
         with open(log_path, "r", newline='') as log_file:
                 reader = csv.reader(log_file)
@@ -71,10 +73,10 @@ def logging(log_path, headers, runtimes):
             with open(log_path, "w", newline='') as log_file:
                 log_writer = csv.writer(log_file)            
                 log_writer.writerow(headers)
-        else:
-            with open(log_path, "a", newline='') as log_file:
-                log_writer = csv.writer(log_file)
-                log_writer.writerow(runtimes)
+        # then append the logging results to the log file
+        with open(log_path, "a", newline='') as log_file:
+            log_writer = csv.writer(log_file)
+            log_writer.writerow(runtimes)
     except Exception as e:
         print(e)
 def garbage_man(silent=False):
@@ -88,7 +90,6 @@ def main():
     parser = None
     try:
         tsps = find_salespeople()
-        # print(tsps)
     except Exception as e:
         print(e)
         exit()

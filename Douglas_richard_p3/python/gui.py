@@ -14,9 +14,10 @@ class GraphApp:
     def __init__(self, parser):
         self.label = ''
         self.root = Tk()
+        self.root.geometry("600x600")
         self.root.title(f"Visualization {self.label}")
         # Create text widget and specify size.
-        self.T = Text(self.root, height = 5, width = 52)
+        self.T = Text(self.root, height = 10, width = 100)
         self.T.pack()
 
         # Create a frame for the matplotlib figure
@@ -30,9 +31,7 @@ class GraphApp:
 
     def create_graph(self):
         nodes = self.parser.nodes
-        print(nodes)
         self.graph = nx.DiGraph()
-        self.edge_labels = {}
         self.edges = []
         self.pos = { }
         for node in nodes.keys():
@@ -40,22 +39,20 @@ class GraphApp:
             for connection in nodes[node]['costs'].keys():
                 edge = (node, connection)
                 self.edges.append(edge)
-                self.edge_labels[edge] = nodes[node]['costs'][connection]
 
     def draw_graph(self):
     # Adding nodes and edges
         self.graph.add_edges_from(self.edges, pos=self.pos, fixed=self.edges)
 
         # Create a figure
-        self.figure = plt.Figure(figsize=(5, 5), dpi=100)
+        self.figure = plt.Figure(figsize=(100, 100))
         self.ax = self.figure.add_subplot(111)
 
         # Use the predefined coordinates for the node positions
         self.pos = {node: (data['xy'][0], data['xy'][1]) for node, data in self.parser.nodes.items()}
 
         # Draw the graph using the predefined layout
-        nx.draw(self.graph, self.pos, ax=self.ax, with_labels=True, node_color='skyblue', node_size=700, font_size=15)
-        nx.draw_networkx_edge_labels(self.graph, self.pos, edge_labels=self.edge_labels)
+        nx.draw(self.graph, self.pos, ax=self.ax, with_labels=True, node_color='skyblue', node_size=70, font_size=0)
 
         # Embedding the plot in the Tkinter GUI
         self.canvas = FigureCanvasTkAgg(self.figure, self.frame)
@@ -85,19 +82,18 @@ class GraphApp:
         node_colors[dest_idx] = 'green'
         
         # Draw the graph with updated colors
-        nx.draw_networkx_nodes(self.graph, self.pos, ax=self.ax, node_color=node_colors, node_size=700)
+        nx.draw_networkx_nodes(self.graph, self.pos, ax=self.ax, node_color=node_colors, node_size=70)
         nx.draw_networkx_edges(self.graph, self.pos, edgelist=edges, ax=self.ax)
-        nx.draw_networkx_edge_labels(self.graph, self.pos,edge_labels=self.edge_labels)
+        # nx.draw_networkx_edge_labels(self.graph, self.pos,edge_labels=self.edge_labels)
 
         self.canvas.draw()
-def save_animation(app, tour, filename):
+def save_animation(app, edges, nodes, dest, filename):
     fig = app.figure
     def update_func(i):
-        edge = (tour[i], tour[i+1])
-        app.update(tour[i+1], edge)
+        app.update(edges, nodes, dest)
 
-    ani = animation.FuncAnimation(fig, update_func, frames=len(tour)-1, repeat=False)
-    ani.save(filename, writer='ffmpeg', fps=50)  # Saving as .mp4
+    ani = animation.FuncAnimation(fig, update_func, repeat=False)
+    ani.save(filename, writer='ffmpeg', fps=30)  # Saving as .mp4
 
 
 def animate (app, label, tour, dest, best_cost):
@@ -122,6 +118,7 @@ def animate (app, label, tour, dest, best_cost):
             time.sleep(1)
         time.sleep(.1)
 def animate_path (app, label, tour, dest, best_cost):
+    filename = "./tour_vid.mp4"
     app.label = label
     app.root.title(f"Visualization {label}")
     edges = []
@@ -133,7 +130,8 @@ def animate_path (app, label, tour, dest, best_cost):
     app.T.delete("0.0", END)
     app.T.insert(END, cost_info)
     app.update(edges, tour, dest)
+    # save_animation(app, edges, tour, dest, filename)
     app.root.update_idletasks()
     app.root.update()
     
-    time.sleep(.1)
+    time.sleep(.02)

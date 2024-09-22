@@ -95,64 +95,66 @@ def a_star_costs(parser, d):
             to_dest = math.sqrt(dist)
             parser.nodes[node]["a_star_costs"][n] =  to_dest + to_next
 
-def a_star_rec(parser, adj, visited, s, d, t):
-    # Mark the current vertex as visited
-    visited[s] = True
-    
-    # If the current node is the destination, return the path
-    if s == d:
-        return t
-
-    # Recursively visit all adjacent vertices
-    for i in adj[s]:
-        if not visited[i]:
-            # calculate sum of cost to next node and next node to destination
-            temp = t.copy()  # Copy the current path to avoid modifying it
-            temp.append(i)    # Add the next node to the path
-            result = greedy_rec(adj, visited, i, d, temp)
-            if result is not None:
-                return result  # Return the first valid path found
-    
-    # Backtrack: unmark the current node as visited
-    visited[s] = False
-
-    # If no valid path is found in this branch, return None
-    return None
 def add_edge(adj, s, t):
-    # Add edge from vertex s to t
     adj[s].append(t)
 
+def ctr_dist(parser, n1):
+    x1 = parser.nodes[n1]['xy'][0]
+    y1 = parser.nodes[n1]['xy'][1]
+
+    return math.sqrt((x1)**2+(y1)**2)
+
 def choose_start(parser):
-    xy = float("inf")
-    for node in parser.nodes:
-        this_xy = sum(parser.nodes[node]['xy'])
-        if this_xy < xy:
+    greatest_depth = 0
+    for node in parser.nodes.keys():
+        curr_depth = ctr_dist(parser, node)
+        if curr_depth > greatest_depth:
+            greatest_depth = curr_depth
             start_node = node
     return start_node
+
 def nearest2(parser, start_node):
     adj = list(parser.nodes[start_node]["costs"].keys())
     n1 = adj[1]
     n2 = adj[2]
     return n1,n2
-        
-# heuristic function to return choice of next node to insert
-# lowest 
+
+def ccw(parser, A,B,C):
+    A_x = parser.nodes[A]["xy"][0]
+    A_y = parser.nodes[A]["xy"][1]
+    B_x = parser.nodes[B]["xy"][0]
+    B_y = parser.nodes[B]["xy"][1]
+    C_x = parser.nodes[C]["xy"][0]
+    C_y = parser.nodes[C]["xy"][1]
+    return (C_y-A_y)*(B_x-A_x) > (B_y-A_y)*(C_x-A_x)
+
+def intersect(parser, A,B,C,D):
+        return ccw(parser, A,C,D) != ccw(parser, B,C,D) and ccw(parser, A,B,C) != ccw(parser, A,B,D)
+
 def gi_h(parser, visited, unvisited):
-    
     best_cost = float("inf")
-    for i in range(len(visited)-1):
-        node1 = visited[i]
-        node2 = visited[i+1]
-        for node in unvisited:
-            cost1 = parser.nodes[node1]["costs"][node]
-            cost2 = parser.nodes[node2]["costs"][node]
-            pnext_cost = cost1+cost2
-        
-            if pnext_cost < best_cost:
-                best_cost = pnext_cost
-                best_choice = node
-                closest = node2
-    return best_choice, closest
+    for i in range(1,len(visited)-1):
+            node0 = visited[i-2]
+            node1 = visited[i-1]
+            node2 = visited[i]
+            node3 = visited[i+1]
+            for node in unvisited:
+                cost1 = parser.nodes[node1]["costs"][node]
+                cost2 = parser.nodes[node2]["costs"][node]
+                pnext_cost = cost1+cost2
+                    
+                if pnext_cost < best_cost:
+                    best_cost = pnext_cost
+                    next_node = node
+                    # it's important to check whether the line segments of the node we want to insert intersects with the  
+
+                    if intersect(parser, node0, node1, node2, next_node):
+                        closest = i-1
+                    elif intersect(parser, node2, node3, node1, next_node) == True:
+                        closest = i+1
+                    else:
+                        closest = i
+    return next_node, closest
 
 # not actually sure if we need to call all of these static methods. I read somewhere that this is not necessary in newer python versions.
 class FullTraversal:
@@ -248,55 +250,21 @@ class FullTraversal:
     def greedy(parser, tsp_gui):
         start = datetime.now()
         node_names = list(parser.nodes.keys())
-        current_node = parser.nodes[node_names[0]]
-        visited = [node_names[0]]
-        best_cost = 0
-        i = 0
-        while len(visited) < len(parser.nodes):
-            temp_path = visited+[node_names[0]]
-            temp_cost = best_cost + current_node["costs"][node_names[0]]
-            gui.animate(tsp_gui, "bfs", temp_path, node_names[0], temp_cost)
-
-            cost_list = list(current_node["costs"].keys())
-            potential_next = cost_list[i]
-            if potential_next not in visited:
-                prev_node = current_node
-                current_node = parser.nodes[potential_next]
-                best_cost += prev_node["costs"][potential_next]
-                visited.append(potential_next)
-                i = 0
-            i += 1
-        best_cost += current_node["costs"][node_names[0]]
-        visited.append(node_names[0])
-        runtime = datetime.now() - start
-        parser.tour_costs.append(
-            {"algorithm":"greedy", 
-             "input_size": len(node_names), 
-             "cost": best_cost, 
-             "runtime":runtime,
-             "tsp_file": parser.path.split('/')[-1]})
-        return parser
-    
-    # heuristic for insertion: choose the closest to the last two nodes of the current path and insert between them
-    @staticmethod
-    def greedy_insertion(parser, tsp_gui):
-        start_node = choose_start(parser)
-        start = datetime.now()
         parser.sort_costs()
-        node_names = list(parser.nodes.keys())
-        near1, near2 = nearest2(parser, start_node)
-        visited = [start_node, near1, near2, start_node]
-        unvisited = set(parser.nodes.keys())-set(visited)
-        best_cost = 0
-        while len(visited) < len(parser.nodes)+1:
-            temp_path = visited            
-            next_node, closest = gi_h(parser, visited, unvisited, visited[-1], visited[-2])
-            visited.insert(visited.index(closest), next_node)
-            unvisited.remove(next_node)
-
-            best_cost = calculate_cost(parser,visited)
-            gui.animate_path(tsp_gui, "bfs", temp_path, start_node, best_cost)
-        
+        visited = [node_names[0]]
+        unvisited = set(node_names)-set(visited)
+        cost = 0
+        while len(visited) < len(node_names):
+            curr = visited[-1]
+            costs = list(parser.nodes[curr]["costs"].items())
+            for c in costs:
+                if c[0] in unvisited:
+                    visited.append(c[0])
+                    unvisited.remove(c[0])
+                    # gui.animate_path(tsp_gui, "greedy", visited, node_names[0], cost)
+                    break
+        visited.append(node_names[0])
+        best_cost = calculate_cost(parser, visited)
         runtime = datetime.now() - start
         parser.tour_costs.append(
             {"algorithm":"greedy", 
@@ -304,9 +272,39 @@ class FullTraversal:
              "best_cost": best_cost, 
              "runtime":runtime,
              "tsp_file": parser.path.split('/')[-1]})
+        return parser
+    
+    # heuristic for insertion: choose the closest to the last two nodes of the current path and insert between them
+    @staticmethod
+    def greedy_insertion(parser, tsp_gui):
+        start = datetime.now()
+
+        parser.sort_costs()
+        start_node = choose_start(parser)
+        r = random.randint(0,len(parser.nodes.keys())-1)
+        start_node = r
+        node_names = list(parser.nodes.keys())
+        near1, near2 = nearest2(parser, start_node)
+        visited = [start_node, near1, near2, start_node]
+        unvisited = set(parser.nodes.keys())-set(visited)
+        best_cost = 0
+        while len(visited) < len(parser.nodes)+1:
+            next_node, closest = gi_h(parser, visited, unvisited)
+            visited.insert(closest, next_node)
+            unvisited.remove(next_node)
+            best_cost = calculate_cost(parser,visited)
+            gui.animate_path(tsp_gui, "greedy_insertion", visited, start_node, best_cost)
+        
+        runtime = datetime.now() - start
+        parser.tour_costs.append(
+            {"algorithm":"greedy_insertion", 
+             "input_size": len(node_names), 
+             "best_cost": best_cost, 
+             "runtime":runtime,
+             "tsp_file": parser.path.split('/')[-1]})
         return best_cost
     @staticmethod
-    def random_restart(parser, runs):
+    def random_restart(parser, runs, tsp_gui):
         start = datetime.now()
         node_names = list(parser.nodes.keys())
         run = 0
@@ -326,21 +324,20 @@ class FullTraversal:
                         continue
             current_cost += current_node["costs"][node_names[0]]
             visited.append(node_names[0])
-            
             if best_cost == None:
                 best_cost = current_cost
             elif current_cost < best_cost:
                 best_cost = current_cost
+                # gui.animate_path(tsp_gui, "random restart", visited, 0, best_cost)
             run+=1
         runtime = datetime.now() - start
         parser.tour_costs.append(
             {"algorithm":"random_restart", 
              "input_size": len(node_names), 
-             "cost": best_cost, 
+             "best_cost": best_cost, 
              "runtime":runtime,
              "tsp_file": parser.path.split('/')[-1]})
         return parser
-
 
 # separate class for search functions in a directed graph...
 # we aren't going to assume we know a starting node or a destination. let's get closer to this being real and useful - gosh....
