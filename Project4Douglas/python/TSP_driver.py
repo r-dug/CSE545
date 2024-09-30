@@ -17,9 +17,7 @@ import gui
 import tsp_parser2 
 from genetic import Genetic
 
-log_fn = f"costs_{datetime.today().date()}.csv"
 log_dir = "./logs"
-log_path = f"{log_dir}/{log_fn}"
 
 def find_salespeople():
     tsps = []
@@ -49,42 +47,49 @@ def tour(tsp_file):
 
     # FullTraversal object can actually modify the parser object passed into it. neat.
     prsr1 = tsp_parser2.Parser(tsp_file, num_nodes=101)
+    print("parser object created")
     tsp_gui = gui.GraphApp(prsr1)
-    for _ in range(5):
-        for N in Ns:
-            for start in starts:
-                path = f"{log_dir}/{start}_pop_{N}.csv"
-                for p_m in p_ms:
-                    for mutation in mutations:
-                        for rr in rrs:
-                            for elite in elites:
-                                if elite:
-                                    for cream in creams:
-                                        run = Genetic(prsr1.nodes, tsp_gui, N=N, start=start, p_m=p_m, mutate=mutation, rr=rr,
-                                                        track_elite=elite, cream=cream)
-                                        run.evolution()
-                                        for generation in run.family_tree:
-                                            cost_keys = list(generation.keys())
-                                            cost_vals = [generation[key] for key in cost_keys]
+    print("gui instance created")
+    run = Genetic(prsr1.nodes, tsp_gui, N=2000, 
+                  start="strong", p_m=.02, mutate='inversion',
+                  rr=75, track_elite=True, cream=10)
+    run.evolution()
+    print("run complete")
+    # below are nested for loops to iterate through all combinations of parameters.... ew, I know.
+    # for _ in range(5):
+    #     for N in Ns:
+    #         for start in starts:
+    #             path = f"{log_dir}/{N}/{start}.csv"
+    #             for p_m in p_ms:
+    #                 for mutation in mutations:
+    #                     for rr in rrs:
+    #                         for elite in elites:
+    #                             if elite:
+    #                                 for cream in creams:
+    #                                     run = Genetic(prsr1.nodes, tsp_gui, N=N, start=start, p_m=p_m, mutate=mutation, rr=rr,
+    #                                                     track_elite=elite, cream=cream)
+    #                                     run.evolution()
+    #                                     for generation in run.family_tree:
+    #                                         cost_keys = list(generation.keys())
+    #                                         cost_vals = [generation[key] for key in cost_keys]
                                             
-                                            logging(
-                                                path,
-                                                cost_keys, 
-                                                cost_vals
-                                                )
-                                else:
-                                    run = Genetic(prsr1.nodes, tsp_gui, N=N, start=start, p_m=p_m, mutate=mutation, rr=rr,
-                                                track_elite=elite)
-                                    run.evolution()
-                                    for generation in run.family_tree:
-                                        cost_keys = list(generation.keys())
-                                        cost_vals = [generation[key] for key in cost_keys]
-                                        logging(
-                                            path,
-                                            cost_keys, 
-                                            cost_vals
-                                            )
-    return prsr1
+    #                                         logging(
+    #                                             path,
+    #                                             cost_keys, 
+    #                                             cost_vals
+    #                                             )
+    #                             else:
+    #                                 run = Genetic(prsr1.nodes, tsp_gui, N=N, start=start, p_m=p_m, mutate=mutation, rr=rr,
+    #                                             track_elite=elite)
+    #                                 run.evolution()
+    #                                 for generation in run.family_tree:
+    #                                     cost_keys = list(generation.keys())
+    #                                     cost_vals = [generation[key] for key in cost_keys]
+    #                                     logging(
+    #                                         path,
+    #                                         cost_keys, 
+    #                                         cost_vals
+    #                                         )
 
 def logging(log_path, headers, run_info):
     header = None
@@ -120,7 +125,6 @@ def garbage_man(silent=False):
 
 def main():
     garbage_man()
-    parser = None
     try:
         tsps = find_salespeople()
     except Exception as e:
@@ -128,9 +132,7 @@ def main():
         exit()
 
     for tsp in tsps:
-        parser = tour(tsp)
-
-   
+        tour(tsp)
     garbage_man()
 
     exit()

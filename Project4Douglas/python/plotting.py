@@ -13,14 +13,16 @@ def date_stringto_float(x):
     seconds = sum([h_sec,m_sec, sec])
     return seconds
 
-def ensure_plot_path(log, file_value, log_type):
-    plots_dir = f"./logs/{log_type}/"
-    plots_fn = f"{log.split('/')[-1].split('.')[0]}_{file_value}_plot.jpeg"
-    plots_path = f"{plots_dir}{plots_fn}"
-    if not os.path.isdir(plots_dir):
-        os.mkdir(plots_dir)
-        with open(plots_path, 'w') as plots:
-            pass
+def ensure_plot_path(desired_path, file_name):
+    plots_path = f"{desired_path}{file_name}"
+    path = ''
+    for subdir in desired_path.split('/'):
+        path += f"{subdir}/"
+        if not os.path.isdir(path):
+            os.mkdir(path)
+    
+    with open(plots_path, 'w') as plots:
+        pass
     return plots_path
 
 class Plotting:
@@ -56,7 +58,6 @@ class Plotting:
         plots_path = ensure_plot_path(cost_log, file_value, "costs")
         plt.savefig(plots_path)
     
-    
     def genetic_plot(cost_log, file_value=''):
         df = pd.read_csv(cost_log)
         df.drop(columns='runtime')
@@ -73,12 +74,27 @@ class Plotting:
             
             plt.xlabel('Generation')
             plt.ylabel('Cost')
-            plt.title(f'{title}')
+            plt.title(title)
             ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.15), ncol=2)
-            plots_path = ensure_plot_path(cost_log, title, "costs")
+            # desired path ex: ./logs/costs/N/random/inversion_elite.jpeg
+            N = cost_log.split('/')[-1].split("_")[-1].split('.')[0]
+            start_type = cost_log.split('/')[-1].split('.')[-2].split("_")[0]
+            desired_path = f'./plots/cost_graphs/{N}/{start_type}'
+            file_name = f'/{title}.jpeg'
+            plots_path = ensure_plot_path(desired_path, file_name)
             plt.savefig(f"{plots_path}")
+            plt.close()
         plot_df(no_elite_swap, "no_elite_swap")
         plot_df(elite_swap, "elite_swap")
         plot_df(no_elite_inversion, "no_elite_inversion")
         plot_df(elite_inversion, "elite_inversion")
         
+if __name__ == '__main__':
+    csv = []
+    for root, dirs, files in os.walk("."):
+        for file in files:
+            if file.split('.')[-1] == "csv":
+                csv.append(f"{os.path.join(root,file)}")
+    print(csv)
+    for c in csv:
+        Plotting.genetic_plot(c)
