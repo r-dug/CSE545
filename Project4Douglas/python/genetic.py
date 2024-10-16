@@ -4,12 +4,13 @@ import gui
 import gc
 
 class Genetic():
-    def __init__(self, nodes, gui, gens = 1000, p_m = 0.01, N = 5000, start = "strong", cream = 2, track_elite = True, tourney = 30, mutate="swap", rr = 9):
+    def __init__(self, nodes, gui, gens = 2000, p_m = 0.01, N = 5000, start = "strong", cream = 2, track_elite = True, mutate="swap"):
         self.nodes = nodes # our same old dictionary of nodes in a tsp graph
         self.gui = gui
         
         self.generations = 0
         self.max_gens = gens
+        self.runtime = None
 
         self.p_m = p_m
         
@@ -17,9 +18,6 @@ class Genetic():
         self.pop_size = N
         self.pop_fitness = 0
 
-        self.tournament_size = int(N/tourney)
-
-        self.rr = rr
         self.elites = []
         self.cream_max = int(N/cream)
         self.track_elite = track_elite
@@ -53,10 +51,7 @@ class Genetic():
             self.mutate = self.swap_mutate
         elif mutate == "inversion":
             self.mutate = self.inversion_mutate
-        elif mutate == "shuffle":
-            self.mutate = self.shuffle_mutate
-        elif mutate == "random":
-            self.mutate = self.random_mutate
+
 
     def random_chrome(self):
         node_names = list(self.nodes.keys())
@@ -176,34 +171,16 @@ class Genetic():
         p2 = parent2["chromosome"]
         if p1 == p2:
             c1_chrome = self.mutate(p1)
-            c2_chrome = self.mutate(p2)
             cost1 = self.calc_cost(c1_chrome)
-            cost2 = self.calc_cost(c2_chrome)
             child1 = {"chromosome" : c1_chrome, "cost" : cost1}
-            child2 = {"chromosome" : c2_chrome, "cost" : cost2}
-            return child1, child2
-        cross_points = []
-        for i in range(1, len(p1)-1):
-            if p1[i] == p2[i]:
-                cross_points.append(i)
-        # print(cross_points)
-        if len(cross_points)==0:
-            cross1 = random.randint( 1, len(p1)-2 )
-            cross2 = random.randint( 1, len(p1)-2 )
-            c1 = p1[:cross1]
-            c1 = self.chromosome_repair(c1,p2)
-            c2 = p2[:cross2]
-            c2 = self.chromosome_repair(c2,p1)
-            # print("random crossover")
-            return c1, c2
-        cross = cross_points[random.randint(0,len(cross_points)-1)]
+            return child1
+        
+        cross = random.randint(0,len(p1)-1)
         c1 = p1[:cross]
         c1 = self.chromosome_repair(c1,p2)
-        c2 = p2[:cross]
-        c2 = self.chromosome_repair(c2,p1)
 
         # print("made children from crossover")
-        return c1, c2
+        return c1
     def chromosome_repair(self, chrome, parent):
         for gene in parent:
             if not gene in chrome:
@@ -232,30 +209,14 @@ class Genetic():
             # print("Inversion mutation occurred")
         return chromosome
 
-    def shuffle_mutate(self,chromosome):
-        if random.random() < self.p_m:
-            # Perform inversion mutation
-            i, j = sorted(random.sample(range(1, len(chromosome)-1), 2))
-            random.shuffle(chromosome[i:j])
-            # print("Shuffle mutation occurred")
-        return chromosome
-
-
-    def random_restart(self):
-        while len(self.children) < self.pop_size - self.cream_max:
-            chromosome, cost = self.random_chrome()
-            self.children.append({"chromosome": chromosome, "cost": cost})
-        self.children.extend(self.elites)
-        # print("random restart occurred")
-
     def next_gen(self):
         while len(self.children) < self.pop_size - self.cream_max:
             p1, p2 = self.select_parents()
             try:
-                c1, c2 = self.create_offspring(p1,p2)
+                c1 = self.create_offspring(p1,p2)
             except Exception as e:
                 print(e)
-            self.children += [c1,c2]
+            self.children.append(c1)
         self.children.extend(self.elites)
 
     # we can run this 
@@ -263,19 +224,20 @@ class Genetic():
         start = datetime.datetime.now()
         self.children = []
         self.population_fitness()
-        if self.generations % 100 == self.rr:
-            self.random_restart()
-        else:
-            self.next_gen()
+        self.next_gen()
         self.parents = self.children
         if self.track_elite:
             self.elites = sorted(self.parents, key=lambda x: x["cost"])[:self.cream_max]
         mate_time  = datetime.datetime.now() - start
-
+        if self.generations == 0:
+            self.runtime = mate_time
+        else:
+            self.runtime += mate_time
         gui.animate_path(self.gui, f"gen:{self.generations}", self.best_child, 0, self.best_cost, {
-                        "prob of mutation": self.p_m,
-                        "mutation": self.mut, 
-                        "reset rate": self.rr,
+                        "N": self.pop_size,
+                        "initialize": self.start_type,
+                        "p_m": self.p_m,
+                        "mutation": self.mut,
                         "elites": self.track_elite,
                         "elite size": self.cream_max
                         })
@@ -286,16 +248,15 @@ class Genetic():
                     "parameters":{
                         "prob of mutation": self.p_m,
                         "mutation": self.mut, 
-                        "reset rate": self.rr,
                         "elites": self.track_elite,
                         "elite size": self.cream_max
                         },
-                    "runtime": mate_time,
+                    "runtime": self.runtime,
                     "best_child_cost": self.best_cost,
                     "best_gen": self.best_child_gen
                 }
             )
-    def check_convergence(self, threshold=100):
+    def check_convergence(self, threshold=50):
         if self.generations - self.best_child_gen >= threshold:
             print(f"Converged after {self.generations} generations.")
             return True
@@ -309,5 +270,7 @@ class Genetic():
             if self.check_convergence():
                 break
             gc.collect()
-        print("BEST COST:\n\t",self.best_cost)
-        print("BEST PATH:\n\t",self.best_child)
+        print("*"*25, "\nRUNTIME: ", self.runtime)
+        print("*"*25, "\nBEST COST:\n\t",self.best_cost)
+        print("*"*25, "\nBEST PATH:\n\t",self.best_child)
+        print("*"*25)
